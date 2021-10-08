@@ -1,0 +1,21 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t yashvs/complex -f ./client/Dockerfile.dev ./
+
+script:
+  - docker run -e CI=true USERNAME/react-test npm test
+
+after_success:
+  - docker build -t yashvs/clinet ./client
+  - docker build -t yashvs/nginx ./nginx
+  - docker build -t yashvs/server ./server
+  - docker build -t yashvs/worker ./worker
+# push images to dockerhub
+
+  - docker push yashvs/client
+  - docker push yashvs/nginx
+  - docker push yashvs/server
+  - docker push yashvs/worker
