@@ -1,0 +1,57 @@
+# structure of file
+#postgres image to use
+#redis image to use
+#server - specify build, specify volumnes, specify env vars - setup inside of the container (at the run time, i.e. when container is started up),
+
+
+version: '3'
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - POSTGRES_PASSWORD=postgres_password
+  redis:
+    image: 'redis:latest'
+  nginx:
+    depends_on:
+      - api
+      - client
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./server # which folder to look for the docker file
+    volumes: # specified so that no need to rebuild the image in-case of minor changes
+      - /app/node_modules # as workdir for dockerfile.dev is /app
+      - ./server:/app # copy all from server to app inside docker
+    environment:
+      - REDIS_HOST=redis # as defined in image above
+      - REDIS_PORT=6379
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPOrt=5432
+  client:
+    stdin_open: true
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /app/node_modules
+      - ./client:/app
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - /app/node_modules
+      - ./worker:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
